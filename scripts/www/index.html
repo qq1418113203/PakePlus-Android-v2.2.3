@@ -1,11 +1,551 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>与她的专属备忘录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"微软雅黑",sans-serif}
+html{scroll-behavior:smooth}
+body{background:linear-gradient(135deg,#fff0f5,#fef4f8,#ffeaf2);min-height:100vh;padding:12px;transition:all 0.3s ease}
+/* 全局毛玻璃弹窗（全自适应） */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999}
+.modal-card{background:rgba(255,255,255,0.96);border-radius:22px;width:92%;max-width:370px;padding:26px;text-align:center;box-shadow:0 10px 35px rgba(216,27,96,0.12)}
+.modal-title{font-size:19px;color:#c2185b;font-weight:700;margin-bottom:16px}
+.modal-desc{font-size:13px;color:#666;margin-bottom:12px}
+.modal-input{width:100%;padding:13px;border:1px solid #f8c8dc;border-radius:12px;margin:10px 0;font-size:15px;text-align:center;outline:none}
+.modal-btns{display:flex;gap:10px;margin-top:14px}
+.modal-btn{flex:1;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;transition:transform 0.2s ease}
+.modal-btn:active{transform:scale(0.96)}
+.btn-main{background:#c2185b;color:#fff}
+.btn-sub{background:#fce4ec;color:#c2185b}
+.btn-danger{background:#ef4444;color:#fff}
+/* 头部样式 */
+.header{text-align:center;padding:18px 0 12px}
+.main-title{font-size:25px;color:#c2185b;font-weight:700;background:linear-gradient(90deg,#c2185b,#ec407a);-webkit-background-clip:text;background-clip:text;color:transparent}
+#girlName{font-size:17px;color:#ec407a;font-weight:600;margin-top:6px}
+.sub-title{font-size:13px;color:#888;margin-top:4px}
+/* 统计卡片 */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px}
+.stat-card{background:rgba(255,255,255,0.92);border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 3px 10px rgba(216,27,96,0.06);transition:transform 0.2s ease}
+.stat-card:active{transform:scale(0.98)}
+.stat-num{font-size:19px;color:#c2185b;font-weight:700}
+.stat-text{font-size:11px;color:#666;margin-top:3px}
+/* 标签栏 */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,0.85);border-radius:16px;padding:5px;gap:3px;margin-bottom:16px}
+.tab{padding:9px 4px;text-align:center;border-radius:12px;font-size:13px;color:#777;transition:all 0.2s ease}
+.tab.active{background:#fce4ec;color:#c2185b;font-weight:600}
+.tab:active{transform:scale(0.96)}
+/* 内容卡片 */
+.card{background:rgba(255,255,255,0.94);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 15px rgba(216,27,96,0.06);transition:transform 0.2s ease}
+.card:active{transform:translateY(1px)}
+.card-title{font-size:16px;color:#c2185b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+label{font-size:14px;color:#555;margin-bottom:5px;display:block;font-weight:500}
+input,textarea,select{width:100%;border:1px solid #f8c8dc;border-radius:12px;padding:11px 12px;font-size:14px;margin-bottom:10px;outline:none;background:#fff;transition:border 0.2s ease}
+input:focus,textarea:focus,select:focus{border-color:#ec407a}
+textarea{resize:none;height:85px;line-height:1.5}
+/* 快捷心情 */
+.mood-box{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.mood-item{padding:7px 12px;background:#fce4ec;border-radius:10px;font-size:13px;color:#c2185b;transition:all 0.2s ease}
+.mood-item.active{background:#c2185b;color:#fff}
+.mood-item:active{transform:scale(0.95)}
+/* 筛选栏 */
+.filter-box{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.filter-item{padding:6px 10px;background:#fff;border:1px solid #f8c8dc;border-radius:8px;font-size:12px;color:#c2185b}
+.filter-item.active{background:#c2185b;color:#fff;border-color:#c2185b}
+/* 按钮组 */
+.btn-group{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.btn{padding:13px;border-radius:12px;border:none;font-size:14px;font-weight:500;transition:all 0.2s ease}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:#c2185b;color:#fff}
+.btn-light{background:#fce4ec;color:#c2185b}
+.btn-full{grid-column:span 2}
+/* 记录列表 */
+.record-list{margin-top:12px}
+.record-item{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid #ec407a;transition:transform 0.2s ease}
+.record-item:active{transform:translateX(2px)}
+.record-time{font-size:12px;color:#999;margin-bottom:5px}
+.record-type{display:inline-block;padding:3px 8px;background:#fce4ec;color:#c2185b;border-radius:6px;font-size:11px;margin-bottom:6px;font-weight:500}
+.record-text{font-size:14px;line-height:1.6;color:#333;margin:5px 0}
+.record-op{display:flex;gap:10px;margin-top:10px}
+.op-btn{flex:1;padding:7px;border-radius:10px;border:none;font-size:12px;background:#f3f4f6;color:#666;transition:all 0.2s ease}
+.op-btn:active{transform:scale(0.95)}
+.op-btn.danger{background:#fee2e2;color:#dc2626}
+/* 内容页切换 */
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* 自定义档案 */
+.custom-item{display:flex;gap:7px;margin-bottom:8px;align-items:center}
+.custom-item input{flex:1;margin:0}
+/* 空状态 */
+.empty{text-align:center;padding:40px 0;color:#999;font-size:14px;line-height:1.5}
+/* 动画 */
+.heart{animation:heartBeat 0.6s ease-in-out}
+@keyframes heartBeat{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+/* 护眼模式适配 */
+body.dark{background:linear-gradient(135deg,#2a1a20,#352029);color:#f5f5f5}
+body.dark .card,body.dark .record-item,body.dark .modal-card,body.dark .stat-card{background:rgba(38,38,38,0.95);color:#f5f5f5}
+body.dark input,body.dark textarea,body.dark select{background:#2d2d2d;color:#f5f5f5;border-color:#555}
+body.dark input:focus,body.dark textarea:focus,body.dark select:focus{border-color:#ec407a}
+body.dark label,body.dark .record-text{color:#e5e5e5}
+body.dark .sub-title,body.dark .record-time{color:#aaa}
+body.dark .filter-item{background:#2d2d2d;border-color:#555}
+</style>
+</head>
+<body>
+
+<!-- 启动密码锁 -->
+<div class="modal" id="lockModal">
+    <div class="modal-card">
+        <div class="modal-title">🔒 专属备忘录</div>
+        <input type="password" class="modal-input" id="lockPwd" placeholder="请输入密码" maxlength="6">
+        <div class="modal-desc">初始密码：123456</div>
+        <button class="modal-btn btn-main" onclick="unlockApp()">解锁进入</button>
+    </div>
+</div>
+
+<!-- 主界面 -->
+<div class="header">
+    <div class="main-title">💌 与她的点点滴滴</div>
+    <div id="girlName">我的女孩</div>
+    <div class="sub-title">用心珍藏每一个温柔瞬间</div>
+</div>
+
+<!-- 统计栏 -->
+<div class="stats">
+    <div class="stat-card"><div class="stat-num" id="totalNum">0</div><div class="stat-text">总记录</div></div>
+    <div class="stat-card"><div class="stat-num" id="loveDay">0</div><div class="stat-text">陪伴天数</div></div>
+    <div class="stat-card"><div class="stat-num" id="nextDay">0</div><div class="stat-text">生日倒计时</div></div>
+</div>
+
+<!-- 标签导航 -->
+<div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">写记录</div>
+    <div class="tab" onclick="switchTab(1)">查回忆</div>
+    <div class="tab" onclick="switchTab(2)">她的档案</div>
+    <div class="tab" onclick="switchTab(3)">设置</div>
+</div>
+
+<!-- 1.写记录页 -->
+<div class="tab-content active" id="tab0">
+    <div class="card">
+        <div class="card-title">✍️ 记录心动瞬间</div>
+        <label>📅 记录时间</label>
+        <input type="datetime-local" id="recordTime">
+        <label>📂 记录分类</label>
+        <select id="recordType">
+            <option>日常小事</option>
+            <option>心动时刻</option>
+            <option>约会回忆</option>
+            <option>初见纪念</option>
+        </select>
+        <label>😊 快捷心情</label>
+        <div class="mood-box">
+            <div class="mood-item" onclick="selectMood(this,'开心')">开心</div>
+            <div class="mood-item" onclick="selectMood(this,'心动')">心动</div>
+            <div class="mood-item" onclick="selectMood(this,'想念')">想念</div>
+            <div class="mood-item" onclick="selectMood(this,'温暖')">温暖</div>
+            <div class="mood-item" onclick="selectMood(this,'害羞')">害羞</div>
+            <div class="mood-item" onclick="selectMood(this,'期待')">期待</div>
+        </div>
+        <input type="text" id="moodText" placeholder="也可手动输入自定义心情">
+        <label>💌 今日故事</label>
+        <textarea id="recordContent" placeholder="记录你们的聊天、见面、心动的小细节..."></textarea>
+        <label>💬 心动语录</label>
+        <textarea id="recordQuote" placeholder="她对你说的暖心话、可爱的口头禅..."></textarea>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveRecord()">💾 保存记录</button>
+        <button class="btn btn-light" onclick="clearInput()">🧹 清空内容</button>
+    </div>
+</div>
+
+<!-- 2.查回忆页 -->
+<div class="tab-content" id="tab1">
+    <div class="card">
+        <div class="card-title">📖 筛选回忆</div>
+        <div class="filter-box">
+            <div class="filter-item active" onclick="filterRecord(this,'all')">全部</div>
+            <div class="filter-item" onclick="filterRecord(this,'日常小事')">日常</div>
+            <div class="filter-item" onclick="filterRecord(this,'心动时刻')">心动</div>
+            <div class="filter-item" onclick="filterRecord(this,'约会回忆')">约会</div>
+            <div class="filter-item" onclick="filterRecord(this,'初见纪念')">初见</div>
+        </div>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-light" onclick="showRecords()">🔄 刷新记录</button>
+        <button class="btn btn-danger btn-full" onclick="showClearModal()">🗑️ 清空所有记录</button>
+    </div>
+    <div class="record-list" id="recordBox"></div>
+</div>
+
+<!-- 3.她的档案页（日期清晰区分） -->
+<div class="tab-content" id="tab2">
+    <div class="card">
+        <div class="card-title">🎯 她的专属档案</div>
+        <label>👧 她的昵称/名字</label>
+        <input type="text" id="nickname" placeholder="比如：宝贝、小乖、她的名字">
+        <label>🎂 她的生日</label>
+        <input type="date" id="birthday">
+        <div class="modal-desc" style="margin:-5px 0 10px 0">用于生日倒计时提醒，每年自动更新</div>
+        <label>👋 相识/初见日</label>
+        <input type="date" id="firstDay">
+        <div class="modal-desc" style="margin:-5px 0 10px 0">你们刚认识的那天，自动计算陪伴天数</div>
+        <label>🍬 喜欢的事物</label>
+        <input type="text" id="like" placeholder="爱吃的食物、爱好、喜欢的礼物、颜色...">
+        <label>🚫 忌口/雷区</label>
+        <input type="text" id="hate" placeholder="不吃的食物、讨厌的事、不能碰的雷区...">
+        <label>✨ 小习惯/小癖好</label>
+        <input type="text" id="habit" placeholder="生活小习惯、可爱的小癖好、口头禅...">
+        
+        <div class="card-title" style="margin-top:18px">📌 自定义信息</div>
+        <div class="modal-desc" style="margin:-8px 0 10px 0">可无限添加，比如：鞋码、星座、生理期、喜欢的歌...</div>
+        <div id="customWrap"></div>
+        <button class="btn btn-light btn-full" onclick="addCustom()">➕ 添加自定义项</button>
+        <button class="btn btn-primary btn-full" onclick="saveProfile()">✅ 保存档案</button>
+    </div>
+</div>
+
+<!-- 4.设置页 -->
+<div class="tab-content" id="tab3">
+    <div class="card">
+        <div class="card-title">⚙️ 应用设置</div>
+        <button class="btn btn-light btn-full" onclick="showChangePwd()">🔑 修改解锁密码</button>
+        <button class="btn btn-light btn-full" onclick="toggleDark()">🌙 护眼模式切换</button>
+        <button class="btn btn-light btn-full" onclick="backupData()">💾 备份所有数据</button>
+        <button class="btn btn-light btn-full" onclick="restoreData()">🔄 还原备份数据</button>
+    </div>
+</div>
+
+<script>
+// 核心配置
+const DEFAULT_PWD = "123456";
+let currentMood = "";
+let currentTab = 0;
+let currentFilter = "all";
+
+// ========== 密码解锁 ==========
+function unlockApp(){
+    const inputPwd = document.getElementById("lockPwd").value;
+    const appPwd = localStorage.getItem("APP_PWD") || DEFAULT_PWD;
+    if(inputPwd === appPwd){
+        document.getElementById("lockModal").remove();
+        initApp();
+    }else{
+        showTip("密码错误，请重试");
+    }
+}
+
+// ========== 初始化应用 ==========
+function initApp(){
+    // 自动填充当前时间
+    const now = new Date();
+    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
+    // 加载所有数据
+    loadProfile();
+    showRecords();
+    updateStats();
+    // 键盘弹出适配
+    document.querySelectorAll("input,textarea").forEach(el=>{
+        el.addEventListener("focus",()=>{
+            setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),300);
+        });
+    });
+}
+
+// ========== 标签切换 ==========
+function switchTab(index){
+    currentTab = index;
+    // 切换激活状态
+    document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",i===index));
+    document.querySelectorAll(".tab-content").forEach((c,i)=>c.classList.toggle("active",i===index));
+    // 页面切换后刷新数据
+    if(index === 1) showRecords();
+    if(index === 2) loadProfile();
+}
+
+// ========== 快捷心情选择 ==========
+function selectMood(el,text){
+    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
+    el.classList.add("active");
+    currentMood = text;
+    document.getElementById("moodText").value = text;
+}
+
+// ========== 记录筛选 ==========
+function filterRecord(el,type){
+    document.querySelectorAll(".filter-item").forEach(i=>i.classList.remove("active"));
+    el.classList.add("active");
+    currentFilter = type;
+    showRecords();
+}
+
+// ========== 档案自定义字段 ==========
+function addCustom(){
+    const wrap = document.getElementById("customWrap");
+    const div = document.createElement("div");
+    div.className = "custom-item";
+    div.innerHTML = `<input placeholder="名称" class="cKey"><input placeholder="内容" class="cVal">`;
+    wrap.appendChild(div);
+}
+
+// ========== 保存档案 ==========
+function saveProfile(){
+    const profile = {
+        name: document.getElementById("nickname").value.trim(),
+        birth: document.getElementById("birthday").value,
+        first: document.getElementById("firstDay").value,
+        like: document.getElementById("like").value.trim(),
+        hate: document.getElementById("hate").value.trim(),
+        habit: document.getElementById("habit").value.trim(),
+        custom: []
+    };
+    // 收集自定义字段
+    document.querySelectorAll(".custom-item").forEach(item=>{
+        profile.custom.push({
+            k: item.querySelector(".cKey").value.trim(),
+            v: item.querySelector(".cVal").value.trim()
+        });
+    });
+    // 保存到本地
+    localStorage.setItem("PROFILE", JSON.stringify(profile));
+    // 更新顶部昵称
+    document.getElementById("girlName").innerText = profile.name || "我的女孩";
+    // 刷新统计数据
+    updateStats();
+    // 成功提示
+    showTip("✅ 档案保存成功");
+}
+
+// ========== 加载档案 ==========
+function loadProfile(){
+    const profile = JSON.parse(localStorage.getItem("PROFILE") || "{}");
+    // 填充基础信息
+    document.getElementById("nickname").value = profile.name || "";
+    document.getElementById("birthday").value = profile.birth || "";
+    document.getElementById("firstDay").value = profile.first || "";
+    document.getElementById("like").value = profile.like || "";
+    document.getElementById("hate").value = profile.hate || "";
+    document.getElementById("habit").value = profile.habit || "";
+    // 更新顶部昵称
+    document.getElementById("girlName").innerText = profile.name || "我的女孩";
+    // 填充自定义字段
+    const wrap = document.getElementById("customWrap");
+    wrap.innerHTML = "";
+    (profile.custom || []).forEach(item=>{
+        const div = document.createElement("div");
+        div.className = "custom-item";
+        div.innerHTML = `<input value="${item.k}" class="cKey"><input value="${item.v}" class="cVal">`;
+        wrap.appendChild(div);
+    });
+}
+
+// ========== 保存记录 ==========
+function saveRecord(){
+    const time = document.getElementById("recordTime").value;
+    const type = document.getElementById("recordType").value;
+    const mood = document.getElementById("moodText").value.trim() || currentMood || "未填写";
+    const content = document.getElementById("recordContent").value.trim();
+    const quote = document.getElementById("recordQuote").value.trim() || "无";
+    // 非空校验
+    if(!content){
+        showTip("请填写记录内容哦");
+        return;
+    }
+    // 构造记录对象
+    const record = {
+        id: Date.now(),
+        time: time,
+        type: type,
+        mood: mood,
+        content: content,
+        quote: quote
+    };
+    // 保存到本地
+    const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+    records.unshift(record);
+    localStorage.setItem("RECORDS", JSON.stringify(records));
+    // 成功动效+提示
+    document.querySelector(".main-title").classList.add("heart");
+    setTimeout(()=>document.querySelector(".main-title").classList.remove("heart"),600);
+    showTip("✅ 记录保存成功");
+    // 清空输入（保留时间）
+    document.getElementById("moodText").value = "";
+    document.getElementById("recordContent").value = "";
+    document.getElementById("recordQuote").value = "";
+    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
+    currentMood = "";
+    // 刷新数据
+    showRecords();
+    updateStats();
+}
+
+// ========== 展示记录 ==========
+function showRecords(){
+    const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+    const box = document.getElementById("recordBox");
+    // 空状态
+    if(records.length === 0){
+        box.innerHTML = '<div class="empty">暂无记录，快去写下第一条属于你们的回忆吧💕</div>';
+        return;
+    }
+    // 筛选记录
+    const filterRecords = currentFilter === "all" ? records : records.filter(item=>item.type === currentFilter);
+    if(filterRecords.length === 0){
+        box.innerHTML = '<div class="empty">该分类下暂无记录哦</div>';
+        return;
+    }
+    // 渲染记录
+    let html = "";
+    filterRecords.forEach(item=>{
+        html += `
+        <div class="record-item">
+            <div class="record-time">📅 ${item.time.replace("T"," ")}</div>
+            <div class="record-type">${item.type}</div>
+            <div class="record-text">😊 心情：${item.mood}</div>
+            <div class="record-text">💌 故事：${item.content}</div>
+            <div class="record-text">💬 语录：${item.quote}</div>
+            <div class="record-op">
+                <button class="op-btn danger" onclick="delRecord(${item.id})">删除</button>
+            </div>
+        </div>`;
+    });
+    box.innerHTML = html;
+}
+
+// ========== 删除单条记录 ==========
+function delRecord(id){
+    if(!confirm("确定要删除这条记录吗？删除后无法恢复哦")) return;
+    const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+    const newRecords = records.filter(item=>item.id !== id);
+    localStorage.setItem("RECORDS", JSON.stringify(newRecords));
+    showRecords();
+    updateStats();
+    showTip("删除成功");
+}
+
+// ========== 清空所有记录（三重验证） ==========
+function showClearModal(){
+    const inputPwd = prompt("请输入解锁密码，以清空所有记录：");
+    const appPwd = localStorage.getItem("APP_PWD") || DEFAULT_PWD;
+    // 密码校验
+    if(inputPwd !== appPwd){
+        if(inputPwd !== null) showTip("密码错误，无法清空");
+        return;
+    }
+    // 二次确认
+    if(confirm("⚠️ 警告：此操作将删除所有记录，且无法恢复！确定要继续吗？")){
+        localStorage.removeItem("RECORDS");
+        showRecords();
+        updateStats();
+        showTip("已清空所有记录");
+    }
+}
+
+// ========== 数据统计更新 ==========
+function updateStats(){
+    // 1.总记录数
+    const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+    document.getElementById("totalNum").innerText = records.length;
+    // 2.陪伴天数
+    const profile = JSON.parse(localStorage.getItem("PROFILE") || "{}");
+    if(profile.first){
+        const firstDay = new Date(profile.first);
+        const now = new Date();
+        const dayDiff = Math.floor((now - firstDay) / (1000 * 60 * 60 * 24));
+        document.getElementById("loveDay").innerText = dayDiff >= 0 ? dayDiff : 0;
+    }else{
+        document.getElementById("loveDay").innerText = 0;
+    }
+    // 3.生日倒计时
+    if(profile.birth){
+        const birthDay = new Date(profile.birth);
+        const now = new Date();
+        // 今年生日
+        birthDay.setFullYear(now.getFullYear());
+        // 今年生日已过，算明年
+        if(birthDay < now) birthDay.setFullYear(now.getFullYear() + 1);
+        const dayDiff = Math.ceil((birthDay - now) / (1000 * 60 * 60 * 24));
+        document.getElementById("nextDay").innerText = dayDiff;
+    }else{
+        document.getElementById("nextDay").innerText = 0;
+    }
+}
+
+// ========== 清空输入 ==========
+function clearInput(){
+    document.getElementById("moodText").value = "";
+    document.getElementById("recordContent").value = "";
+    document.getElementById("recordQuote").value = "";
+    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
+    currentMood = "";
+    // 重置时间为当前
+    const now = new Date();
+    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
+    showTip("已清空输入内容");
+}
+
+// ========== 修改密码 ==========
+function showChangePwd(){
+    const oldPwd = prompt("请输入旧密码：");
+    const appPwd = localStorage.getItem("APP_PWD") || DEFAULT_PWD;
+    if(oldPwd !== appPwd){
+        showTip("旧密码错误");
+        return;
+    }
+    const newPwd = prompt("请输入新密码（6位以内）：");
+    if(newPwd && newPwd.length <= 6){
+        localStorage.setItem("APP_PWD", newPwd);
+        showTip("✅ 密码修改成功");
+    }else if(newPwd !== null){
+        showTip("密码长度不能超过6位");
+    }
+}
+
+// ========== 护眼模式 ==========
+function toggleDark(){
+    document.body.classList.toggle("dark");
+    showTip(document.body.classList.contains("dark") ? "已开启护眼模式" : "已关闭护眼模式");
+}
+
+// ========== 数据备份/还原 ==========
+function backupData(){
+    const backupData = {
+        records: localStorage.getItem("RECORDS"),
+        profile: localStorage.getItem("PROFILE"),
+        pwd: localStorage.getItem("APP_PWD")
+    };
+    const backupStr = JSON.stringify(backupData);
+    // 复制到剪贴板
+    navigator.clipboard.writeText(backupStr).then(()=>{
+        showTip("✅ 备份数据已复制到剪贴板");
+    }).catch(()=>{
+        alert("备份数据：\n" + backupStr);
+    });
+}
+function restoreData(){
+    const backupStr = prompt("请粘贴备份数据：");
+    if(!backupStr) return;
+    try{
+        const backupData = JSON.parse(backupStr);
+        if(backupData.records) localStorage.setItem("RECORDS", backupData.records);
+        if(backupData.profile) localStorage.setItem("PROFILE", backupData.profile);
+        if(backupData.pwd) localStorage.setItem("APP_PWD", backupData.pwd);
+        showTip("✅ 数据还原成功");
+        initApp();
+    }catch(e){
+        showTip("备份数据格式错误");
+    }
+}
+
+// ========== 全局提示弹窗 ==========
+function showTip(text){
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `<div class="modal-card"><div class="modal-title">${text}</div></div>`;
+    document.body.appendChild(modal);
+    setTimeout(()=>modal.remove(),1600);
+}
+</script>
+</body>
 </html>
