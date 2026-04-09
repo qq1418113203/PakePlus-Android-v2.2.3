@@ -41,7 +41,7 @@ body.keyboard-open{padding-bottom:calc(65vh + 40px) !important}
 .stat-num{font-size:20px;color:#c2185b;font-weight:700}
 .stat-text{font-size:12px;color:#666;margin-top:4px}
 
-/* 标签栏（完美改回横向） */
+/* 标签栏（完美横向） */
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,0.9);border-radius:18px;padding:6px;gap:4px;margin-bottom:18px}
 .tab{padding:10px 4px;text-align:center;border-radius:14px;font-size:13px;color:#777;transition:all 0.2s ease}
 .tab.active{background:#fce4ec;color:#c2185b;font-weight:600}
@@ -144,7 +144,7 @@ body.dark .word-count{color:#aaa}
     </div>
 </div>
 
-<!-- 主界面（用class控制显示，避免样式冲突） -->
+<!-- 主界面 -->
 <div class="main-app-content" style="display:none">
     <div class="header">
         <div class="main-title">💌 与她的点点滴滴</div>
@@ -169,13 +169,10 @@ body.dark .word-count{color:#aaa}
     </div>
 </div>
 
-<!-- 1.写记录页 -->
+<!-- 1.写记录页（已移除手动时间选择） -->
 <div class="tab-content active" id="tab0">
     <div class="card">
         <div class="card-title">✍️ 记录心动瞬间</div>
-        <label>📅 记录时间</label>
-        <input type="datetime-local" id="recordTime">
-
         <label>📂 记录分类</label>
         <select id="recordType">
             <option>日常小事</option>
@@ -213,7 +210,7 @@ body.dark .word-count{color:#aaa}
     </div>
 
     <div class="btn-group">
-        <button class="btn btn-primary btn-full" onclick="saveRecord()">💾 保存记录（自动同步云端）</button>
+        <button class="btn btn-primary btn-full" onclick="saveRecord()">💾 保存记录（自动记录时间）</button>
     </div>
     <div id="bottomSafeSpace"></div>
 </div>
@@ -299,11 +296,10 @@ const firebaseConfig = {
   measurementId: "G-5518PCMM0D"
 };
 
-// 初始化Firebase + 强制开启登录持久化（核心：实现登录记忆）
+// 初始化Firebase + 强制开启登录持久化
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
-// 强制设置登录状态持久化，关闭APP再打开自动保持登录
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 // 全局变量
@@ -318,27 +314,35 @@ let resizeTimer = null;
 let scrollTimer = null;
 
 // ==============================================
-// 账号登录/注册/退出核心逻辑（登录记忆完美实现）
+// 核心工具函数：生成本地标准时间格式
 // ==============================================
-// 监听登录状态（核心：APP启动自动检测登录状态）
+function getCurrentLocalTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// ==============================================
+// 账号登录/注册/退出核心逻辑
+// ==============================================
 auth.onAuthStateChanged((user) => {
     if (user) {
-        // 已登录：隐藏登录界面，显示主APP，自动同步数据
         currentUser = user;
         document.getElementById("loginModal").style.display = "none";
         document.querySelectorAll(".main-app-content").forEach(el=>el.style.display = "block");
         document.getElementById("userStatus").innerText = `🟢 已登录 | ${user.email}`;
-        // 登录后自动拉取云端数据
         syncData();
     } else {
-        // 未登录：显示登录界面，隐藏主APP
         currentUser = null;
         document.getElementById("loginModal").style.display = "flex";
         document.querySelectorAll(".main-app-content").forEach(el=>el.style.display = "none");
     }
 });
 
-// 登录
 function login(){
     const email = document.getElementById("loginEmail").value.trim();
     const pwd = document.getElementById("loginPwd").value.trim();
@@ -348,7 +352,6 @@ function login(){
         .catch((error)=>{showTip("登录失败：" + error.message);});
 }
 
-// 注册
 function register(){
     const email = document.getElementById("loginEmail").value.trim();
     const pwd = document.getElementById("loginPwd").value.trim();
@@ -358,11 +361,9 @@ function register(){
         .catch((error)=>{showTip("注册失败：" + error.message);});
 }
 
-// 退出登录
 function logout(){
     if(!confirm("确定要退出登录吗？退出后需重新输入账号密码登录")) return;
     auth.signOut().then(()=>{
-        // 退出登录清空本地缓存，避免数据混淆
         localStorage.removeItem("RECORDS");
         localStorage.removeItem("PROFILE");
         localStorage.removeItem("DRAFT");
@@ -371,11 +372,9 @@ function logout(){
     });
 }
 
-// 修改账号登录密码
 function changeAccountPwd(){
     const oldPwd = prompt("请输入当前账号密码：");
     if(!oldPwd) return;
-    // 重新验证身份（Firebase安全要求）
     const user = auth.currentUser;
     const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPwd);
     user.reauthenticateWithCredential(credential)
@@ -396,26 +395,20 @@ function changeAccountPwd(){
         });
 }
 
-// 云端数据同步
+// ==============================================
+// 云端数据同步逻辑
+// ==============================================
 function syncData(){
     if(!currentUser){showTip("请先登录账号");return;}
-    // 拉取云端记录
     db.ref('users/' + currentUser.uid).once('value')
         .then((snapshot)=>{
             const data = snapshot.val();
             if(data){
-                // 同步记录
-                if(data.records){
-                    localStorage.setItem("RECORDS", JSON.stringify(Object.values(data.records)));
-                }
-                // 同步档案
-                if(data.profile){
-                    localStorage.setItem("PROFILE", JSON.stringify(data.profile));
-                }
+                if(data.records) localStorage.setItem("RECORDS", JSON.stringify(Object.values(data.records)));
+                if(data.profile) localStorage.setItem("PROFILE", JSON.stringify(data.profile));
                 showTip("✅ 云端数据同步成功");
                 initApp();
             }else{
-                // 云端无数据，把本地数据上传到云端
                 uploadLocalData();
             }
         })
@@ -424,21 +417,15 @@ function syncData(){
         });
 }
 
-// 本地数据上传到云端
 function uploadLocalData(){
     if(!currentUser) return;
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     const profile = JSON.parse(localStorage.getItem("PROFILE") || "{}");
-
-    // 批量上传
     const updates = {};
     updates['users/' + currentUser.uid + '/profile'] = profile;
-    
-    // 记录按id存储
     records.forEach(record=>{
         updates['users/' + currentUser.uid + '/records/' + record.id] = record;
     });
-
     db.ref().update(updates)
         .then(()=>{showTip("✅ 本地数据已同步到云端");})
         .catch((error)=>{showTip("同步失败：" + error.message);});
@@ -478,7 +465,7 @@ document.querySelectorAll("input,textarea").forEach(el => {
 });
 
 // ==============================================
-// 核心功能逻辑（完美兼容云端+本地）
+// 核心功能逻辑
 // ==============================================
 // 字数统计
 function updateWordCount() {
@@ -516,8 +503,6 @@ function removePhoto(){
 
 // 初始化APP
 function initApp(){
-    const now = new Date();
-    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
     loadProfile();
     showRecords();
     updateStats();
@@ -567,10 +552,9 @@ function searchRecord(){
     showRecords();
 }
 
-// 草稿自动保存/加载
+// 草稿自动保存/加载（已移除时间相关）
 function saveDraft(){
     const draft = {
-        time: document.getElementById("recordTime").value,
         type: document.getElementById("recordType").value,
         mood: document.getElementById("moodText").value,
         content: document.getElementById("recordContent").value,
@@ -583,7 +567,6 @@ function saveDraft(){
 
 function loadDraft(){
     const draft = JSON.parse(localStorage.getItem("DRAFT") || "{}");
-    if(draft.time) document.getElementById("recordTime").value = draft.time;
     if(draft.type) document.getElementById("recordType").value = draft.type;
     if(draft.mood) document.getElementById("moodText").value = draft.mood;
     if(draft.content) document.getElementById("recordContent").value = draft.content;
@@ -609,8 +592,7 @@ function clearDraft(){
     currentPhotoBase64 = "";
     document.getElementById("photoPreviewWrap").innerHTML = "";
     document.getElementById("photoInput").value = "";
-    const now = new Date();
-    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
+    document.getElementById("recordType").selectedIndex = 0;
     updateWordCount();
 }
 
@@ -627,7 +609,7 @@ function addCustom(){
     wrap.appendChild(div);
 }
 
-// 保存档案（自动同步云端）
+// 保存档案
 function saveProfile(){
     const profile = {
         name: document.getElementById("nickname").value.trim(),
@@ -644,9 +626,7 @@ function saveProfile(){
             v: item.querySelector(".cVal").value.trim()
         });
     });
-    // 本地保存
     localStorage.setItem("PROFILE", JSON.stringify(profile));
-    // 云端同步
     if(currentUser){
         db.ref('users/' + currentUser.uid + '/profile').set(profile)
             .then(()=>{showTip("✅ 档案保存成功，已同步云端");})
@@ -682,9 +662,10 @@ function loadProfile(){
     });
 }
 
-// 保存记录（自动同步云端）
+// ==============================================
+// 核心：保存记录（自动记录时间）
+// ==============================================
 function saveRecord(){
-    const time = document.getElementById("recordTime").value;
     const type = document.getElementById("recordType").value;
     const mood = document.getElementById("moodText").value.trim() || currentMood || "未填写";
     const content = document.getElementById("recordContent").value.trim();
@@ -695,9 +676,21 @@ function saveRecord(){
         return;
     }
 
+    // 核心逻辑：新建记录自动生成当前时间，编辑记录保留原始时间
+    let recordTime;
+    if(editRecordId){
+        // 编辑模式：从原有记录里获取原始时间，不修改
+        const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+        const originRecord = records.find(item=>item.id === editRecordId);
+        recordTime = originRecord ? originRecord.time : getCurrentLocalTime();
+    }else{
+        // 新建模式：自动记录当前时间
+        recordTime = getCurrentLocalTime();
+    }
+
     const record = {
         id: editRecordId || Date.now(),
-        time: time,
+        time: recordTime,
         type: type,
         mood: mood,
         content: content,
@@ -731,12 +724,12 @@ function saveRecord(){
     updateStats();
 }
 
-// 编辑记录
+// 编辑记录（保留原始时间）
 function editRecord(id){
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     const record = records.find(item=>item.id === id);
     if(!record) return;
-    document.getElementById("recordTime").value = record.time;
+
     document.getElementById("recordType").value = record.type;
     document.getElementById("moodText").value = record.mood;
     document.getElementById("recordContent").value = record.content;
@@ -815,7 +808,6 @@ function delRecord(id){
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     const newRecords = records.filter(item=>item.id !== id);
     localStorage.setItem("RECORDS", JSON.stringify(newRecords));
-    // 同步删除云端数据
     if(currentUser){
         db.ref('users/' + currentUser.uid + '/records/' + id).remove().catch(()=>{});
     }
