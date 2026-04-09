@@ -2,17 +2,22 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<!-- 核心：安卓软键盘适配viewport，解决遮挡基础 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>与她的专属备忘录</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"微软雅黑",sans-serif}
-html{scroll-behavior:smooth}
-body{background:linear-gradient(135deg,#fff0f5,#fef4f8,#ffeaf2);min-height:100vh;padding:12px;transition:all 0.3s ease}
+html{height:100%;scroll-behavior:smooth}
+/* 核心：安卓键盘适配body样式 */
+body{height:100%;background:linear-gradient(135deg,#fff0f5,#fef4f8,#ffeaf2);padding:12px;transition:all 0.3s ease;position:relative;overflow-x:hidden}
+/* 键盘弹出时的底部安全边距 */
+body.keyboard-open{padding-bottom:calc(50vh + 20px)}
+
 /* 全局毛玻璃弹窗（全自适应） */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999}
 .modal-card{background:rgba(255,255,255,0.96);border-radius:22px;width:92%;max-width:370px;padding:26px;text-align:center;box-shadow:0 10px 35px rgba(216,27,96,0.12)}
 .modal-title{font-size:19px;color:#c2185b;font-weight:700;margin-bottom:16px}
-.modal-desc{font-size:13px;color:#666;margin-bottom:12px}
+.modal-desc{font-size:13px;color:#666;margin-bottom:12px;line-height:1.4}
 .modal-input{width:100%;padding:13px;border:1px solid #f8c8dc;border-radius:12px;margin:10px 0;font-size:15px;text-align:center;outline:none}
 .modal-btns{display:flex;gap:10px;margin-top:14px}
 .modal-btn{flex:1;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;transition:transform 0.2s ease}
@@ -20,76 +25,104 @@ body{background:linear-gradient(135deg,#fff0f5,#fef4f8,#ffeaf2);min-height:100vh
 .btn-main{background:#c2185b;color:#fff}
 .btn-sub{background:#fce4ec;color:#c2185b}
 .btn-danger{background:#ef4444;color:#fff}
+
 /* 头部样式 */
 .header{text-align:center;padding:18px 0 12px}
 .main-title{font-size:25px;color:#c2185b;font-weight:700;background:linear-gradient(90deg,#c2185b,#ec407a);-webkit-background-clip:text;background-clip:text;color:transparent}
 #girlName{font-size:17px;color:#ec407a;font-weight:600;margin-top:6px}
 .sub-title{font-size:13px;color:#888;margin-top:4px}
+
 /* 统计卡片 */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px}
 .stat-card{background:rgba(255,255,255,0.92);border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 3px 10px rgba(216,27,96,0.06);transition:transform 0.2s ease}
 .stat-card:active{transform:scale(0.98)}
 .stat-num{font-size:19px;color:#c2185b;font-weight:700}
 .stat-text{font-size:11px;color:#666;margin-top:3px}
+
 /* 标签栏 */
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,0.85);border-radius:16px;padding:5px;gap:3px;margin-bottom:16px}
 .tab{padding:9px 4px;text-align:center;border-radius:12px;font-size:13px;color:#777;transition:all 0.2s ease}
 .tab.active{background:#fce4ec;color:#c2185b;font-weight:600}
 .tab:active{transform:scale(0.96)}
+
 /* 内容卡片 */
 .card{background:rgba(255,255,255,0.94);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 15px rgba(216,27,96,0.06);transition:transform 0.2s ease}
 .card:active{transform:translateY(1px)}
 .card-title{font-size:16px;color:#c2185b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 label{font-size:14px;color:#555;margin-bottom:5px;display:block;font-weight:500}
-input,textarea,select{width:100%;border:1px solid #f8c8dc;border-radius:12px;padding:11px 12px;font-size:14px;margin-bottom:10px;outline:none;background:#fff;transition:border 0.2s ease}
-input:focus,textarea:focus,select:focus{border-color:#ec407a}
-textarea{resize:none;height:85px;line-height:1.5}
+input,textarea,select{width:100%;border:1px solid #f8c8dc;border-radius:12px;padding:11px 12px;font-size:14px;margin-bottom:10px;outline:none;background:#fff;transition:all 0.2s ease}
+input:focus,textarea:focus,select:focus{border-color:#ec407a;box-shadow:0 0 0 3px rgba(236,64,122,0.1)}
+textarea{resize:none;height:90px;line-height:1.5}
+
+/* 图片上传样式 */
+.photo-upload{border:2px dashed #f8c8dc;border-radius:12px;padding:15px;text-align:center;margin-bottom:10px;transition:all 0.2s ease}
+.photo-upload:active{border-color:#ec407a;background:#fce4ec}
+.photo-preview{max-width:100%;border-radius:10px;margin-top:10px;max-height:250px;object-fit:contain}
+.photo-remove{margin-top:8px;padding:6px 12px;border-radius:8px;border:none;background:#fee2e2;color:#dc2626;font-size:12px}
+.record-photo{max-width:100%;border-radius:10px;margin:8px 0;max-height:300px;object-fit:contain;display:block}
+
 /* 快捷心情 */
 .mood-box{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
 .mood-item{padding:7px 12px;background:#fce4ec;border-radius:10px;font-size:13px;color:#c2185b;transition:all 0.2s ease}
 .mood-item.active{background:#c2185b;color:#fff}
 .mood-item:active{transform:scale(0.95)}
-/* 筛选栏 */
+
+/* 搜索&筛选栏 */
+.search-box{margin-bottom:12px}
+.search-input{width:100%;padding:11px 15px;border-radius:12px;border:1px solid #f8c8dc;font-size:14px}
 .filter-box{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.filter-item{padding:6px 10px;background:#fff;border:1px solid #f8c8dc;border-radius:8px;font-size:12px;color:#c2185b}
-.filter-item.active{background:#c2185b;color:#fff;border-color:#c2185b}
+.filter-item,.sort-item{padding:6px 10px;background:#fff;border:1px solid #f8c8dc;border-radius:8px;font-size:12px;color:#c2185b;transition:all 0.2s ease}
+.filter-item.active,.sort-item.active{background:#c2185b;color:#fff;border-color:#c2185b}
+.filter-item:active,.sort-item:active{transform:scale(0.95)}
+
 /* 按钮组 */
-.btn-group{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.btn-group{display:grid;grid-template-columns:1fr;gap:10px;margin:12px 0}
 .btn{padding:13px;border-radius:12px;border:none;font-size:14px;font-weight:500;transition:all 0.2s ease}
 .btn:active{transform:scale(0.97)}
 .btn-primary{background:#c2185b;color:#fff}
 .btn-light{background:#fce4ec;color:#c2185b}
-.btn-full{grid-column:span 2}
+.btn-full{grid-column:span 1}
+
 /* 记录列表 */
-.record-list{margin-top:12px}
-.record-item{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid #ec407a;transition:transform 0.2s ease}
+.record-list{margin-top:12px;padding-bottom:30px}
+.record-item{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid #ec407a;transition:transform 0.2s ease;position:relative;overflow:hidden}
+.record-item::before{content:"💖";position:absolute;top:10px;right:10px;opacity:0.15;font-size:20px}
 .record-item:active{transform:translateX(2px)}
 .record-time{font-size:12px;color:#999;margin-bottom:5px}
 .record-type{display:inline-block;padding:3px 8px;background:#fce4ec;color:#c2185b;border-radius:6px;font-size:11px;margin-bottom:6px;font-weight:500}
-.record-text{font-size:14px;line-height:1.6;color:#333;margin:5px 0}
+.record-text{font-size:14px;line-height:1.6;color:#333;margin:5px 0;word-break:break-all}
 .record-op{display:flex;gap:10px;margin-top:10px}
 .op-btn{flex:1;padding:7px;border-radius:10px;border:none;font-size:12px;background:#f3f4f6;color:#666;transition:all 0.2s ease}
 .op-btn:active{transform:scale(0.95)}
+.op-btn.edit{background:#fce4ec;color:#c2185b}
 .op-btn.danger{background:#fee2e2;color:#dc2626}
+
 /* 内容页切换 */
 .tab-content{display:none}
 .tab-content.active{display:block}
+
 /* 自定义档案 */
 .custom-item{display:flex;gap:7px;margin-bottom:8px;align-items:center}
 .custom-item input{flex:1;margin:0}
+.del-custom-btn{width:30px;height:30px;border-radius:8px;border:none;background:#fee2e2;color:#dc2626;font-size:12px;flex-shrink:0}
+
 /* 空状态 */
 .empty{text-align:center;padding:40px 0;color:#999;font-size:14px;line-height:1.5}
+
 /* 动画 */
 .heart{animation:heartBeat 0.6s ease-in-out}
 @keyframes heartBeat{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
-/* 护眼模式适配 */
+
+/* 护眼模式全适配 */
 body.dark{background:linear-gradient(135deg,#2a1a20,#352029);color:#f5f5f5}
 body.dark .card,body.dark .record-item,body.dark .modal-card,body.dark .stat-card{background:rgba(38,38,38,0.95);color:#f5f5f5}
 body.dark input,body.dark textarea,body.dark select{background:#2d2d2d;color:#f5f5f5;border-color:#555}
-body.dark input:focus,body.dark textarea:focus,body.dark select:focus{border-color:#ec407a}
+body.dark input:focus,body.dark textarea:focus,body.dark select:focus{border-color:#ec407a;box-shadow:0 0 0 3px rgba(236,64,122,0.2)}
 body.dark label,body.dark .record-text{color:#e5e5e5}
-body.dark .sub-title,body.dark .record-time{color:#aaa}
-body.dark .filter-item{background:#2d2d2d;border-color:#555}
+body.dark .sub-title,body.dark .record-time,body.dark .modal-desc{color:#aaa}
+body.dark .filter-item,body.dark .sort-item{background:#2d2d2d;border-color:#555}
+body.dark .photo-upload{border-color:#555}
+body.dark .photo-upload:active{border-color:#ec407a;background:rgba(236,64,122,0.1)}
 </style>
 </head>
 <body>
@@ -153,17 +186,26 @@ body.dark .filter-item{background:#2d2d2d;border-color:#555}
         <textarea id="recordContent" placeholder="记录你们的聊天、见面、心动的小细节..."></textarea>
         <label>💬 心动语录</label>
         <textarea id="recordQuote" placeholder="她对你说的暖心话、可爱的口头禅..."></textarea>
+        <label>📸 上传图片（聊天记录/合照）</label>
+        <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+            <div style="color:#c2185b;font-size:14px">点击上传图片</div>
+            <div style="color:#888;font-size:12px;margin-top:4px">支持聊天记录截图、合照等</div>
+            <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+        </div>
+        <div id="photoPreviewWrap"></div>
     </div>
     <div class="btn-group">
-        <button class="btn btn-primary" onclick="saveRecord()">💾 保存记录</button>
-        <button class="btn btn-light" onclick="clearInput()">🧹 清空内容</button>
+        <button class="btn btn-primary btn-full" onclick="saveRecord()">💾 保存记录</button>
     </div>
 </div>
 
 <!-- 2.查回忆页 -->
 <div class="tab-content" id="tab1">
     <div class="card">
-        <div class="card-title">📖 筛选回忆</div>
+        <div class="card-title">🔍 搜索&筛选回忆</div>
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="输入关键词搜索记录..." oninput="searchRecord()">
+        </div>
         <div class="filter-box">
             <div class="filter-item active" onclick="filterRecord(this,'all')">全部</div>
             <div class="filter-item" onclick="filterRecord(this,'日常小事')">日常</div>
@@ -171,15 +213,15 @@ body.dark .filter-item{background:#2d2d2d;border-color:#555}
             <div class="filter-item" onclick="filterRecord(this,'约会回忆')">约会</div>
             <div class="filter-item" onclick="filterRecord(this,'初见纪念')">初见</div>
         </div>
-    </div>
-    <div class="btn-group">
-        <button class="btn btn-light" onclick="showRecords()">🔄 刷新记录</button>
-        <button class="btn btn-danger btn-full" onclick="showClearModal()">🗑️ 清空所有记录</button>
+        <div class="filter-box">
+            <div class="sort-item active" onclick="sortRecord(this,'desc')">最新在前</div>
+            <div class="sort-item" onclick="sortRecord(this,'asc')">最早在前</div>
+        </div>
     </div>
     <div class="record-list" id="recordBox"></div>
 </div>
 
-<!-- 3.她的档案页（日期清晰区分） -->
+<!-- 3.她的档案页 -->
 <div class="tab-content" id="tab2">
     <div class="card">
         <div class="card-title">🎯 她的专属档案</div>
@@ -223,6 +265,68 @@ const DEFAULT_PWD = "123456";
 let currentMood = "";
 let currentTab = 0;
 let currentFilter = "all";
+let currentSort = "desc";
+let editRecordId = null; // 编辑记录的id
+let currentPhotoBase64 = ""; // 当前上传的图片base64
+
+// ========== 核心：安卓软键盘遮挡问题解决 ==========
+// 监听窗口高度变化，判断键盘弹出/收起
+const originHeight = window.innerHeight;
+window.addEventListener("resize", () => {
+    const currentHeight = window.innerHeight;
+    if (currentHeight < originHeight - 100) {
+        // 键盘弹出
+        document.body.classList.add("keyboard-open");
+        // 延迟滚动到聚焦元素
+        setTimeout(() => {
+            const activeEl = document.activeElement;
+            if (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") {
+                activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }, 500);
+    } else {
+        // 键盘收起
+        document.body.classList.remove("keyboard-open");
+    }
+});
+
+// 所有输入框聚焦适配
+document.querySelectorAll("input,textarea").forEach(el => {
+    el.addEventListener("focus", () => {
+        // 延迟执行，等待键盘弹出
+        setTimeout(() => {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 500);
+    });
+});
+
+// ========== 图片上传处理 ==========
+function handlePhotoUpload(event){
+    const file = event.target.files[0];
+    if(!file) return;
+    // 检查文件大小（超过5MB提示）
+    if(file.size > 5 * 1024 * 1024){
+        showTip("图片太大啦，建议小于5MB");
+        return;
+    }
+    // 转base64
+    const reader = new FileReader();
+    reader.onload = function(e){
+        currentPhotoBase64 = e.target.result;
+        // 显示预览
+        const wrap = document.getElementById("photoPreviewWrap");
+        wrap.innerHTML = `
+            <img src="${currentPhotoBase64}" class="photo-preview">
+            <button class="photo-remove" onclick="removePhoto()">删除图片</button>
+        `;
+    };
+    reader.readAsDataURL(file);
+}
+function removePhoto(){
+    currentPhotoBase64 = "";
+    document.getElementById("photoPreviewWrap").innerHTML = "";
+    document.getElementById("photoInput").value = "";
+}
 
 // ========== 密码解锁 ==========
 function unlockApp(){
@@ -245,12 +349,12 @@ function initApp(){
     loadProfile();
     showRecords();
     updateStats();
-    // 键盘弹出适配
-    document.querySelectorAll("input,textarea").forEach(el=>{
-        el.addEventListener("focus",()=>{
-            setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),300);
-        });
-    });
+    // 加载草稿
+    loadDraft();
+    // 监听输入，自动保存草稿
+    document.getElementById("recordContent").addEventListener("input", saveDraft);
+    document.getElementById("recordQuote").addEventListener("input", saveDraft);
+    document.getElementById("moodText").addEventListener("input", saveDraft);
 }
 
 // ========== 标签切换 ==========
@@ -270,6 +374,7 @@ function selectMood(el,text){
     el.classList.add("active");
     currentMood = text;
     document.getElementById("moodText").value = text;
+    saveDraft();
 }
 
 // ========== 记录筛选 ==========
@@ -280,12 +385,73 @@ function filterRecord(el,type){
     showRecords();
 }
 
+// ========== 记录排序 ==========
+function sortRecord(el,type){
+    document.querySelectorAll(".sort-item").forEach(i=>i.classList.remove("active"));
+    el.classList.add("active");
+    currentSort = type;
+    showRecords();
+}
+
+// ========== 记录搜索 ==========
+function searchRecord(){
+    showRecords();
+}
+
+// ========== 草稿自动保存/加载 ==========
+function saveDraft(){
+    const draft = {
+        time: document.getElementById("recordTime").value,
+        type: document.getElementById("recordType").value,
+        mood: document.getElementById("moodText").value,
+        content: document.getElementById("recordContent").value,
+        quote: document.getElementById("recordQuote").value,
+        photo: currentPhotoBase64
+    };
+    localStorage.setItem("DRAFT", JSON.stringify(draft));
+}
+function loadDraft(){
+    const draft = JSON.parse(localStorage.getItem("DRAFT") || "{}");
+    if(draft.time) document.getElementById("recordTime").value = draft.time;
+    if(draft.type) document.getElementById("recordType").value = draft.type;
+    if(draft.mood) document.getElementById("moodText").value = draft.mood;
+    if(draft.content) document.getElementById("recordContent").value = draft.content;
+    if(draft.quote) document.getElementById("recordQuote").value = draft.quote;
+    if(draft.photo){
+        currentPhotoBase64 = draft.photo;
+        const wrap = document.getElementById("photoPreviewWrap");
+        wrap.innerHTML = `
+            <img src="${currentPhotoBase64}" class="photo-preview">
+            <button class="photo-remove" onclick="removePhoto()">删除图片</button>
+        `;
+    }
+}
+function clearDraft(){
+    localStorage.removeItem("DRAFT");
+    document.getElementById("moodText").value = "";
+    document.getElementById("recordContent").value = "";
+    document.getElementById("recordQuote").value = "";
+    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
+    currentMood = "";
+    editRecordId = null;
+    currentPhotoBase64 = "";
+    document.getElementById("photoPreviewWrap").innerHTML = "";
+    document.getElementById("photoInput").value = "";
+    // 重置时间为当前
+    const now = new Date();
+    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
+}
+
 // ========== 档案自定义字段 ==========
 function addCustom(){
     const wrap = document.getElementById("customWrap");
     const div = document.createElement("div");
     div.className = "custom-item";
-    div.innerHTML = `<input placeholder="名称" class="cKey"><input placeholder="内容" class="cVal">`;
+    div.innerHTML = `
+        <input placeholder="名称" class="cKey">
+        <input placeholder="内容" class="cVal">
+        <button class="del-custom-btn" onclick="this.parentElement.remove()">×</button>
+    `;
     wrap.appendChild(div);
 }
 
@@ -335,7 +501,11 @@ function loadProfile(){
     (profile.custom || []).forEach(item=>{
         const div = document.createElement("div");
         div.className = "custom-item";
-        div.innerHTML = `<input value="${item.k}" class="cKey"><input value="${item.v}" class="cVal">`;
+        div.innerHTML = `
+            <input value="${item.k}" class="cKey">
+            <input value="${item.v}" class="cVal">
+            <button class="del-custom-btn" onclick="this.parentElement.remove()">×</button>
+        `;
         wrap.appendChild(div);
     });
 }
@@ -348,51 +518,104 @@ function saveRecord(){
     const content = document.getElementById("recordContent").value.trim();
     const quote = document.getElementById("recordQuote").value.trim() || "无";
     // 非空校验
-    if(!content){
-        showTip("请填写记录内容哦");
+    if(!content && !currentPhotoBase64){
+        showTip("请填写内容或上传图片哦");
         return;
     }
     // 构造记录对象
     const record = {
-        id: Date.now(),
+        id: editRecordId || Date.now(),
         time: time,
         type: type,
         mood: mood,
         content: content,
-        quote: quote
+        quote: quote,
+        photo: currentPhotoBase64 // 保存图片
     };
     // 保存到本地
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
-    records.unshift(record);
+    if(editRecordId){
+        // 编辑模式：替换原有记录
+        const index = records.findIndex(item=>item.id === editRecordId);
+        if(index !== -1) records[index] = record;
+        showTip("✅ 记录编辑成功");
+    }else{
+        // 新增模式：添加到顶部
+        records.unshift(record);
+        showTip("✅ 记录保存成功");
+        // 安卓震动反馈
+        if(navigator.vibrate) navigator.vibrate(50);
+    }
     localStorage.setItem("RECORDS", JSON.stringify(records));
-    // 成功动效+提示
+    // 成功动效
     document.querySelector(".main-title").classList.add("heart");
     setTimeout(()=>document.querySelector(".main-title").classList.remove("heart"),600);
-    showTip("✅ 记录保存成功");
-    // 清空输入（保留时间）
-    document.getElementById("moodText").value = "";
-    document.getElementById("recordContent").value = "";
-    document.getElementById("recordQuote").value = "";
-    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
-    currentMood = "";
+    // 清空草稿
+    clearDraft();
     // 刷新数据
     showRecords();
     updateStats();
+}
+
+// ========== 编辑记录 ==========
+function editRecord(id){
+    const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
+    const record = records.find(item=>item.id === id);
+    if(!record) return;
+    // 填充到输入框
+    document.getElementById("recordTime").value = record.time;
+    document.getElementById("recordType").value = record.type;
+    document.getElementById("moodText").value = record.mood;
+    document.getElementById("recordContent").value = record.content;
+    document.getElementById("recordQuote").value = record.quote;
+    // 填充图片
+    if(record.photo){
+        currentPhotoBase64 = record.photo;
+        const wrap = document.getElementById("photoPreviewWrap");
+        wrap.innerHTML = `
+            <img src="${currentPhotoBase64}" class="photo-preview">
+            <button class="photo-remove" onclick="removePhoto()">删除图片</button>
+        `;
+    }else{
+        currentPhotoBase64 = "";
+        document.getElementById("photoPreviewWrap").innerHTML = "";
+    }
+    // 设置编辑id
+    editRecordId = id;
+    // 切换到写记录页
+    switchTab(0);
+    // 滚动到顶部
+    window.scrollTo({top:0,behavior:"smooth"});
+    showTip("请编辑内容，编辑完成后点击保存");
 }
 
 // ========== 展示记录 ==========
 function showRecords(){
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     const box = document.getElementById("recordBox");
+    const searchKey = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
     // 空状态
     if(records.length === 0){
         box.innerHTML = '<div class="empty">暂无记录，快去写下第一条属于你们的回忆吧💕</div>';
         return;
     }
     // 筛选记录
-    const filterRecords = currentFilter === "all" ? records : records.filter(item=>item.type === currentFilter);
+    let filterRecords = currentFilter === "all" ? records : records.filter(item=>item.type === currentFilter);
+    // 搜索过滤
+    if(searchKey){
+        filterRecords = filterRecords.filter(item=>
+            (item.content && item.content.toLowerCase().includes(searchKey)) ||
+            (item.quote && item.quote.toLowerCase().includes(searchKey)) ||
+            (item.mood && item.mood.toLowerCase().includes(searchKey))
+        );
+    }
+    // 排序
+    if(currentSort === "asc"){
+        filterRecords = [...filterRecords].reverse();
+    }
+    // 空状态
     if(filterRecords.length === 0){
-        box.innerHTML = '<div class="empty">该分类下暂无记录哦</div>';
+        box.innerHTML = '<div class="empty">没有找到对应的记录哦</div>';
         return;
     }
     // 渲染记录
@@ -403,9 +626,11 @@ function showRecords(){
             <div class="record-time">📅 ${item.time.replace("T"," ")}</div>
             <div class="record-type">${item.type}</div>
             <div class="record-text">😊 心情：${item.mood}</div>
-            <div class="record-text">💌 故事：${item.content}</div>
-            <div class="record-text">💬 语录：${item.quote}</div>
+            <div class="record-text">💌 故事：${item.content || "无"}</div>
+            <div class="record-text">💬 语录：${item.quote || "无"}</div>
+            ${item.photo ? `<img src="${item.photo}" class="record-photo" onclick="window.open('${item.photo}')">` : ""}
             <div class="record-op">
+                <button class="op-btn edit" onclick="editRecord(${item.id})">编辑</button>
                 <button class="op-btn danger" onclick="delRecord(${item.id})">删除</button>
             </div>
         </div>`;
@@ -422,24 +647,6 @@ function delRecord(id){
     showRecords();
     updateStats();
     showTip("删除成功");
-}
-
-// ========== 清空所有记录（三重验证） ==========
-function showClearModal(){
-    const inputPwd = prompt("请输入解锁密码，以清空所有记录：");
-    const appPwd = localStorage.getItem("APP_PWD") || DEFAULT_PWD;
-    // 密码校验
-    if(inputPwd !== appPwd){
-        if(inputPwd !== null) showTip("密码错误，无法清空");
-        return;
-    }
-    // 二次确认
-    if(confirm("⚠️ 警告：此操作将删除所有记录，且无法恢复！确定要继续吗？")){
-        localStorage.removeItem("RECORDS");
-        showRecords();
-        updateStats();
-        showTip("已清空所有记录");
-    }
 }
 
 // ========== 数据统计更新 ==========
@@ -470,19 +677,6 @@ function updateStats(){
     }else{
         document.getElementById("nextDay").innerText = 0;
     }
-}
-
-// ========== 清空输入 ==========
-function clearInput(){
-    document.getElementById("moodText").value = "";
-    document.getElementById("recordContent").value = "";
-    document.getElementById("recordQuote").value = "";
-    document.querySelectorAll(".mood-item").forEach(i=>i.classList.remove("active"));
-    currentMood = "";
-    // 重置时间为当前
-    const now = new Date();
-    document.getElementById("recordTime").value = now.toISOString().slice(0,16);
-    showTip("已清空输入内容");
 }
 
 // ========== 修改密码 ==========
