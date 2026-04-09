@@ -169,7 +169,7 @@ body.dark .word-count{color:#aaa}
     </div>
 </div>
 
-<!-- 1.写记录页（已移除手动时间选择） -->
+<!-- 1.写记录页（已优化输入法适配） -->
 <div class="tab-content active" id="tab0">
     <div class="card">
         <div class="card-title">✍️ 记录心动瞬间</div>
@@ -190,14 +190,14 @@ body.dark .word-count{color:#aaa}
             <div class="mood-item" onclick="selectMood(this,'害羞')">害羞</div>
             <div class="mood-item" onclick="selectMood(this,'期待')">期待</div>
         </div>
-        <input type="text" id="moodText" placeholder="也可手动输入自定义心情">
+        <input type="text" id="moodText" class="keyboard-scroll-target" placeholder="也可手动输入自定义心情">
 
         <label>💌 今日故事</label>
-        <textarea id="recordContent" placeholder="记录你们的聊天、见面、心动的小细节..." oninput="updateWordCount()"></textarea>
+        <textarea id="recordContent" class="keyboard-scroll-target" placeholder="记录你们的聊天、见面、心动的小细节..." oninput="updateWordCount()"></textarea>
         <div class="word-count" id="wordCount1">0 字</div>
 
         <label>💬 心动语录</label>
-        <textarea id="recordQuote" placeholder="她对你说的暖心话、可爱的口头禅..." oninput="updateWordCount()"></textarea>
+        <textarea id="recordQuote" class="keyboard-scroll-target" placeholder="她对你说的暖心话、可爱的口头禅..." oninput="updateWordCount()"></textarea>
         <div class="word-count" id="wordCount2">0 字</div>
 
         <label>📸 上传图片（聊天记录/合照）</label>
@@ -269,15 +269,17 @@ body.dark .word-count{color:#aaa}
     </div>
 </div>
 
-<!-- 4.设置页 -->
+<!-- 4.设置页（已美化间距） -->
 <div class="tab-content" id="tab3">
     <div class="card">
         <div class="card-title">⚙️ 账号设置</div>
-        <button class="btn btn-light btn-full" onclick="toggleDark()">🌙 护眼模式切换</button>
-        <button class="btn btn-light btn-full" onclick="syncData()">🔄 手动同步云端数据</button>
-        <button class="btn btn-light btn-full" onclick="backupData()">💾 本地数据备份</button>
-        <button class="btn btn-light btn-full" onclick="changeAccountPwd()">🔑 修改账号登录密码</button>
-        <button class="btn btn-danger btn-full" onclick="logout()">🚪 退出登录</button>
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <button class="btn btn-light btn-full" onclick="toggleDark()">🌙 护眼模式切换</button>
+            <button class="btn btn-light btn-full" onclick="syncData()">🔄 手动同步云端数据</button>
+            <button class="btn btn-light btn-full" onclick="backupData()">💾 本地数据备份</button>
+            <button class="btn btn-light btn-full" onclick="changeAccountPwd()">🔑 修改账号登录密码</button>
+            <button class="btn btn-danger btn-full" onclick="logout()">🚪 退出登录</button>
+        </div>
     </div>
 </div>
 
@@ -314,7 +316,7 @@ let resizeTimer = null;
 let scrollTimer = null;
 
 // ==============================================
-// 核心工具函数：生成本地标准时间格式
+// 核心工具函数
 // ==============================================
 function getCurrentLocalTime() {
     const now = new Date();
@@ -432,7 +434,7 @@ function uploadLocalData(){
 }
 
 // ==============================================
-// 输入法遮挡适配（完美保留）
+// 完美优化：输入法遮挡适配（针对写记录页）
 // ==============================================
 const originHeight = window.innerHeight;
 window.addEventListener("resize", () => {
@@ -441,26 +443,28 @@ window.addEventListener("resize", () => {
         const currentHeight = window.innerHeight;
         if (currentHeight < originHeight - 120) {
             document.body.classList.add("keyboard-open");
+            // 核心优化：输入法弹出后，自动滚动到当前聚焦的输入框
             setTimeout(() => {
                 const activeEl = document.activeElement;
-                if (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") {
-                    activeEl.scrollIntoView({ behavior: "smooth", block: "start" });
-                    window.scrollBy(0, 60);
+                if (activeEl.classList.contains("keyboard-scroll-target")) {
+                    activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                    window.scrollBy(0, 40); // 额外留一点空间，避免完全贴边
                 }
-            }, 600);
+            }, 300);
         } else {
             document.body.classList.remove("keyboard-open");
         }
     }, 200);
 });
 
-document.querySelectorAll("input,textarea").forEach(el => {
+// 额外优化：输入框获取焦点时，也主动触发滚动
+document.querySelectorAll(".keyboard-scroll-target").forEach(el => {
     el.addEventListener("focus", () => {
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(() => {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-            window.scrollBy(0, 60);
-        }, 300);
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            window.scrollBy(0, 40);
+        }, 200);
     });
 });
 
@@ -552,7 +556,7 @@ function searchRecord(){
     showRecords();
 }
 
-// 草稿自动保存/加载（已移除时间相关）
+// 草稿自动保存/加载
 function saveDraft(){
     const draft = {
         type: document.getElementById("recordType").value,
@@ -676,15 +680,12 @@ function saveRecord(){
         return;
     }
 
-    // 核心逻辑：新建记录自动生成当前时间，编辑记录保留原始时间
     let recordTime;
     if(editRecordId){
-        // 编辑模式：从原有记录里获取原始时间，不修改
         const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
         const originRecord = records.find(item=>item.id === editRecordId);
         recordTime = originRecord ? originRecord.time : getCurrentLocalTime();
     }else{
-        // 新建模式：自动记录当前时间
         recordTime = getCurrentLocalTime();
     }
 
@@ -698,7 +699,6 @@ function saveRecord(){
         photo: currentPhotoBase64
     };
 
-    // 本地保存
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     if(editRecordId){
         const index = records.findIndex(item=>item.id === editRecordId);
@@ -711,7 +711,6 @@ function saveRecord(){
     }
     localStorage.setItem("RECORDS", JSON.stringify(records));
 
-    // 云端同步
     if(currentUser){
         db.ref('users/' + currentUser.uid + '/records/' + record.id).set(record)
             .catch(()=>{});
@@ -724,7 +723,7 @@ function saveRecord(){
     updateStats();
 }
 
-// 编辑记录（保留原始时间）
+// 编辑记录
 function editRecord(id){
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     const record = records.find(item=>item.id === id);
@@ -816,19 +815,31 @@ function delRecord(id){
     showTip("删除成功");
 }
 
-// 数据统计
+// ==============================================
+// 核心优化：陪伴天数算法（当日-相识日）
+// ==============================================
 function updateStats(){
     const records = JSON.parse(localStorage.getItem("RECORDS") || "[]");
     document.getElementById("totalNum").innerText = records.length;
     const profile = JSON.parse(localStorage.getItem("PROFILE") || "{}");
+    
+    // 优化陪伴天数算法：当日-相识日，比如4月10日-4月4日=6天
     if(profile.first){
-        const firstDay = new Date(profile.first);
+        // 只取日期部分，忽略时间，避免时区问题
+        const firstDate = new Date(profile.first);
+        const firstDay = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
+        
         const now = new Date();
-        const dayDiff = Math.floor((now - firstDay) / (1000 * 60 * 60 * 24));
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // 核心算法：(今日-相识日) / (1000*60*60*24)，直接取整
+        const dayDiff = Math.ceil((today - firstDay) / (1000 * 60 * 60 * 24));
         document.getElementById("loveDay").innerText = dayDiff >= 0 ? dayDiff : 0;
     }else{
         document.getElementById("loveDay").innerText = 0;
     }
+    
+    // 生日倒计时
     if(profile.birth){
         const birthDay = new Date(profile.birth);
         const now = new Date();
